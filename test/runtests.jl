@@ -246,7 +246,8 @@ const Lib = CuPDLPx.LibCuPDLPx
             pointer(con_ub),
             pointer(var_lb),
             pointer(var_ub),
-            pointer(obj_const)
+            pointer(obj_const),
+            Ref(Lib.OBJECTIVE_SENSE_MINIMIZE)
         )
         @test prob != C_NULL
 

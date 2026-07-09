@@ -19,6 +19,11 @@ end
     NORM_TYPE_L_INF = 1
 end
 
+@enum objective_sense_t::UInt32 begin
+    OBJECTIVE_SENSE_MINIMIZE = 0
+    OBJECTIVE_SENSE_MAXIMIZE = 1
+end
+
 struct lp_problem_t
     num_variables::Cint
     num_constraints::Cint
@@ -26,6 +31,7 @@ struct lp_problem_t
     variable_upper_bound::Ptr{Cdouble}
     objective_vector::Ptr{Cdouble}
     objective_constant::Cdouble
+    objective_sense::objective_sense_t
     constraint_matrix_row_pointers::Ptr{Cint}
     constraint_matrix_col_indices::Ptr{Cint}
     constraint_matrix_values::Ptr{Cdouble}
@@ -173,8 +179,8 @@ function Base.propertynames(x::matrix_desc_t, private::Bool = false)
         end...)
 end
 
-function create_lp_problem(objective_c, A_desc, con_lb, con_ub, var_lb, var_ub, objective_constant)
-    ccall((:create_lp_problem, libcupdlpx), Ptr{lp_problem_t}, (Ptr{Cdouble}, Ptr{matrix_desc_t}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}), objective_c, A_desc, con_lb, con_ub, var_lb, var_ub, objective_constant)
+function create_lp_problem(objective_c, A_desc, con_lb, con_ub, var_lb, var_ub, objective_constant, objective_sense)
+    ccall((:create_lp_problem, libcupdlpx), Ptr{lp_problem_t}, (Ptr{Cdouble}, Ptr{matrix_desc_t}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{objective_sense_t}), objective_c, A_desc, con_lb, con_ub, var_lb, var_ub, objective_constant, objective_sense)
 end
 
 function set_start_values(prob, primal, dual)
