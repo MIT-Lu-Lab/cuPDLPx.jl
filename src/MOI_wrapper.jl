@@ -221,8 +221,12 @@ end
 #   Copy
 # ====================
 
-function _flip_sense(optimizer::Optimizer, obj)
-    return optimizer.max_sense ? -obj : obj
+# cuPDLPx returns duals and reduced costs using the classical sign convention,
+# which negates them for maximization problems. MOI's convention keeps the
+# signs of the equivalent negated-objective minimization problem, so undo the
+# negation here.
+function _negate_if_max(optimizer::Optimizer, x)
+    return optimizer.max_sense ? -x : x
 end
 
 function _fill_matrix_desc!(dest::Optimizer, m::Integer, n::Integer)
@@ -262,11 +266,14 @@ function MOI.copy_to(dest::Optimizer, src::OptimizerCache)
     obj = MOI.get(src, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}())
     dest.c = zeros(Cdouble, A.n)
     for term in obj.terms
-        dest.c[term.variable.value] += _flip_sense(dest, term.coefficient)
+        dest.c[term.variable.value] += term.coefficient
     end
-    dest.obj_const = Cdouble[_flip_sense(dest, MOI.constant(obj))]
+    dest.obj_const = Cdouble[MOI.constant(obj)]
 
     matrix_desc_ptr = Base.unsafe_convert(Ptr{Lib.matrix_desc_t}, dest.matrix_desc_ref)
+    obj_sense_ref = Ref(
+        dest.max_sense ? Lib.OBJECTIVE_SENSE_MAXIMIZE : Lib.OBJECTIVE_SENSE_MINIMIZE,
+    )
 
     GC.@preserve dest begin
         prob = Lib.create_lp_problem(
@@ -277,6 +284,7 @@ function MOI.copy_to(dest::Optimizer, src::OptimizerCache)
             pointer(dest.var_lower),
             pointer(dest.var_upper),
             pointer(dest.obj_const),
+            obj_sense_ref,
         )
         @assert prob != C_NULL
         dest.native_problem_ptr = prob
@@ -398,12 +406,12 @@ end
 
 function MOI.get(optimizer::Optimizer, attr::MOI.ObjectiveValue)
     MOI.check_result_index_bounds(optimizer, attr)
-    return _flip_sense(optimizer, optimizer.result.primal_objective_value)
+    return optimizer.result.primal_objective_value
 end
 
 function MOI.get(optimizer::Optimizer, attr::MOI.DualObjectiveValue)
     MOI.check_result_index_bounds(optimizer, attr)
-    return _flip_sense(optimizer, optimizer.result.dual_objective_value)
+    return optimizer.result.dual_objective_value
 end
 
 const _PRIMAL_STATUS_MAP = Dict(
@@ -454,7 +462,7 @@ function MOI.get(
 )
     MOI.check_result_index_bounds(optimizer, attr)
     row = only(MOI.Utilities.rows(optimizer.sets, ci))
-    return unsafe_load(optimizer.result.dual_solution, row)
+    return _negate_if_max(optimizer, unsafe_load(optimizer.result.dual_solution, row))
 end
 
 function MOI.get(
@@ -463,7 +471,7 @@ function MOI.get(
     ci::MOI.ConstraintIndex{MOI.VariableIndex,MOI.LessThan{Float64}},
 )
     MOI.check_result_index_bounds(optimizer, attr)
-    rc = unsafe_load(optimizer.result.reduced_cost, ci.value)
+    rc = _negate_if_max(optimizer, unsafe_load(optimizer.result.reduced_cost, ci.value))
     return min(0.0, rc)
 end
 
@@ -473,7 +481,7 @@ function MOI.get(
     ci::MOI.ConstraintIndex{MOI.VariableIndex,MOI.GreaterThan{Float64}},
 )
     MOI.check_result_index_bounds(optimizer, attr)
-    rc = unsafe_load(optimizer.result.reduced_cost, ci.value)
+    rc = _negate_if_max(optimizer, unsafe_load(optimizer.result.reduced_cost, ci.value))
     return max(0.0, rc)
 end
 
@@ -486,8 +494,7 @@ function MOI.get(
     },
 )
     MOI.check_result_index_bounds(optimizer, attr)
-    rc = unsafe_load(optimizer.result.reduced_cost, ci.value)
-    return rc
+    return _negate_if_max(optimizer, unsafe_load(optimizer.result.reduced_cost, ci.value))
 end
 
 function MOI.get(optimizer::Optimizer, ::MOI.ResultCount)

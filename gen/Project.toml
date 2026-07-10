@@ -6,4 +6,4 @@ cuPDLPx_jll = "bca5daad-f4d3-5101-ae12-8b63679c982c"
 [compat]
 Clang = "0.19.0"
 CUDA_SDK_jll = "13.0.2"
-cuPDLPx_jll = "0.2.9"
+cuPDLPx_jll = "0.3.0"

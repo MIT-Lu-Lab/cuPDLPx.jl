@@ -2,7 +2,7 @@
 
 julia_version = "1.12.5"
 manifest_format = "2.0"
-project_hash = "7e80af2443a901093e69b967f848723ddf4b70b5"
+project_hash = "df7e9d95a1a6876785aae4c41757ea6f4e19c490"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -77,7 +77,7 @@ version = "1.3.0+1"
 deps = ["MathOptInterface", "cuPDLPx_jll"]
 path = "."
 uuid = "bcd6524d-1420-4b17-a582-359cb8a71a63"
-version = "0.2.9"
+version = "0.3.0"
 
 [[deps.Dates]]
 deps = ["Printf"]
@@ -419,9 +419,9 @@ version = "1.3.1+2"
 
 [[deps.cuPDLPx_jll]]
 deps = ["Artifacts", "CUDA_Runtime_jll", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "TOML", "Zlib_jll"]
-git-tree-sha1 = "63d8f64a1bb08bc9dc8fcfa1c5382a94ec8dc363"
+git-tree-sha1 = "edf5ec28498ca0e149f25df0b7711ed376ffeb33"
 uuid = "bca5daad-f4d3-5101-ae12-8b63679c982c"
-version = "0.2.9+0"
+version = "0.3.0+0"
 
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl"]
